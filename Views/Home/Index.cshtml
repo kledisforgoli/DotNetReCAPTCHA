@@ -1,0 +1,22 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    @if (ViewBag.IsLoggedIn != null && ViewBag.IsLoggedIn)
+    {
+        <p>@ViewBag.WelcomeMessage</p>
+        <form action="@Url.Action("Logout", "Home")" method="post">
+            <recaptcha-v3 action="homepage_logout" />
+            <button type="submit" class="btn btn-danger">Log Out</button>
+        </form>
+    }
+    else
+    {
+        <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+        <p>
+            <a href="/Account/Login">Log In</a> | <a href="/Account/Register">Register</a>
+        </p>
+        <recaptcha-v3 action="homepage_view" />
+    }
+</div>

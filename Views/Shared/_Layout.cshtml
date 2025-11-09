@@ -1,0 +1,177 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - siguria</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/siguria.styles.css" asp-append-version="true" />
+</head>
+<body class="@(Context.Session.GetString("user") != null ? "logged-in" : "")">
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Detyra 2</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav">
+                        @if (Context.Session.GetString("user") != null)
+                        {
+                            <li class="nav-item">
+                                <span class="nav-link text-dark">Perdoruesi: @Context.Session.GetString("user")</span>
+                            </li>
+                            <li class="nav-item">
+                                <form asp-controller="Account" asp-action="Logout" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-link nav-link text-dark">Dilni</button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login">Hyni</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Register">Regjistrohu</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2025 - siguria - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+
+    @if (Context.Session.GetString("user") != null)
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                
+                // sesioni mbaron per 15 sekonda
+                const sessionTimeout = 15 * 1000;
+                // paralajmerim 10 sekonda para mbarimit
+                const warningThreshold = 10 * 1000;
+
+                // elementin e paralajmerimit
+                const warningElement = document.createElement('div');
+                warningElement.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background-color: #ff9800;
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                    display: none;
+                    z-index: 9999;
+                    text-align: center;
+                    font-weight: bold;
+                `;
+                document.body.appendChild(warningElement);
+
+                // funksioni per te shfaqur paralajmerimin
+                function showWarning(secondsLeft) {
+                    warningElement.textContent = `Sesioni juaj mbaron për ${secondsLeft} sekonda`;
+                    warningElement.style.display = 'block';
+                }
+
+                // funksioni per te fshehur paralajmerimin
+                function hideWarning() {
+                    warningElement.style.display = 'none';
+                }
+
+                // funksioni per te bere logout
+                function logout() {
+                    
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '@Url.Action("Logout", "Account")';
+
+                    
+                    const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+                    if (tokenElement) {
+                        const tokenInput = document.createElement('input');
+                        tokenInput.type = 'hidden';
+                        tokenInput.name = '__RequestVerificationToken';
+                        tokenInput.value = tokenElement.value;
+                        form.appendChild(tokenInput);
+                    }
+
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+
+                // fillojme numerimin per sesionin
+                let sessionTimer;
+                let warningTimer;
+
+                function startSessionTimer() {
+                    
+                    // pastrojme timers ekzistues nese ka
+                    if (sessionTimer) clearTimeout(sessionTimer);
+                    if (warningTimer) clearTimeout(warningTimer);
+
+                    // vendosim timer per paralajmerimin
+                    warningTimer = setTimeout(() => {
+                        const countdownInterval = setInterval(() => {
+                            const remaining = Math.ceil((sessionTimeout - (Date.now() - sessionStartTime)) / 1000);
+                            if (remaining <= 0) {
+                                clearInterval(countdownInterval);
+                                hideWarning();
+                            } else {
+                                showWarning(remaining);
+                            }
+                        }, 1000);
+                    }, sessionTimeout - warningThreshold);
+
+                    // Vendosim timer për shkëputjen e sesionit
+                    sessionTimer = setTimeout(logout, sessionTimeout);
+                }
+
+                // ruajme kohen kur filloi sesioni
+                let sessionStartTime = Date.now();
+                startSessionTimer();
+
+                // risetojme timer-in kur ka aktivitet nga perdoruesi
+                const resetEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+                resetEvents.forEach(event => {
+                    document.addEventListener(event, () => {
+                        sessionStartTime = Date.now();
+                        hideWarning();
+                        startSessionTimer();
+                    }, true);
+                });
+            });
+        </script>
+    }
+</body>
+</html>
